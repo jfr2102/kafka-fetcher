@@ -28,13 +28,13 @@ public class Main {
             for (ConsumerRecord<String, String> record : records) {
                 // TODO: aus value timestamp auslesen und latency calculaten
                 // TODO: mit "" im korrekten jsonformat ausgeben in kafka emitter in storm topology
-                //String value  = record.value();
-                //JSONObject jsonValue = new JSONObject(value);
-                //long window_end_timestamp = jsonValue.getLong("end_event_time");
-                //long latency = record.timestamp() - window_end_timestamp
+                String value  = record.value();
+                JSONObject jsonValue = new JSONObject(value);
+                long window_end_timestamp = jsonValue.getLong("end_event_time");
+                long latency = record.timestamp() - window_end_timestamp;
 
-                String template = "%d; %s; %s; %d; %s%n";
-                String csv_out = String.format(template, record.offset(), record.key(), record.value(), record.timestamp(), record.timestampType() );
+                String template = "%d; %s; %s; %d; %s; %d%n";
+                String csv_out = String.format(template, record.offset(), record.key(), record.value(), record.timestamp(), record.timestampType(), latency );
                 try {
                     Files.write(Paths.get("resultsoutput.csv"),csv_out.getBytes(), StandardOpenOption.APPEND);
                 } catch (IOException e) {
