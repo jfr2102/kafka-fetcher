@@ -21,6 +21,7 @@ public class Main {
         props.setProperty("auto.commit.interval.ms", "1000");
         props.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Collections.singleton("results"));
 
@@ -30,12 +31,16 @@ public class Main {
                 long localTimestamp = System.currentTimeMillis();
                 String value = record.value();
                 JSONObject jsonValue = new JSONObject(value);
-                long window_end_timestamp = jsonValue.getLong("end_event_time");
-                long latency = record.timestamp() - window_end_timestamp;
 
-                String template = "%d; %s; %s; %d; %s; %d; %d%n";
+                long window_end_timestamp = jsonValue.getLong("end_event_time");
+                //long latency = record.timestamp() - window_end_timestamp;
+                long window_size = jsonValue.getLong("window_size");
+                long last_event_ts = jsonValue.getLong("last_event_ts");
+                long latency = record.timestamp() - last_event_ts;
+
+                String template = "%d; %s; %s; %d; %s; %d; %d; %d; %d;%n";
                 String csv_out = String.format(template, record.offset(), record.key(), record.value(),
-                        record.timestamp(), record.timestampType(), latency, localTimestamp);
+                        record.timestamp(), record.timestampType(), latency, localTimestamp, window_size, last_event_ts);
                 try {
                     Files.write(Paths.get("resultsoutput.csv"), csv_out.getBytes(), StandardOpenOption.APPEND);
                 } catch (IOException e) {
