@@ -1,6 +1,7 @@
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -33,14 +34,20 @@ public class Main {
                 JSONObject jsonValue = new JSONObject(value);
 
                 long window_end_timestamp = jsonValue.getLong("end_event_time");
-                //long latency = record.timestamp() - window_end_timestamp;
                 long window_size = jsonValue.getLong("window_size");
                 long last_event_ts = jsonValue.getLong("last_event_ts");
                 long latency = record.timestamp() - last_event_ts;
-
-                String template = "%d; %s; %s; %d; %s; %d; %d; %d; %d;%n";
+                long partition = jsonValue.getLong("partition");
+                String note = "/";
+                long latencylocal = localTimestamp - last_event_ts;
+                try{
+                    note = jsonValue.getString("note");
+                } catch (JSONException e){
+                    note = "unparsable";
+                }
+                String template = "%d; %s; %s; %d; %s; %d; %d; %d; %d; %d; %s; %d;%n";
                 String csv_out = String.format(template, record.offset(), record.key(), record.value(),
-                        record.timestamp(), record.timestampType(), latency, localTimestamp, window_size, last_event_ts);
+                        record.timestamp(), record.timestampType(), latency, localTimestamp, window_size, last_event_ts, partition, note, latencylocal);
                 try {
                     Files.write(Paths.get("resultsoutput.csv"), csv_out.getBytes(), StandardOpenOption.APPEND);
                 } catch (IOException e) {
